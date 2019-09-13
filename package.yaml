@@ -1,0 +1,31 @@
+name:                episodic
+# synopsis:            A quick description of your package.
+version:             0.1.0.0
+license:             BSD-3-Clause
+author:              Seth Etter
+maintainer:          mail@sethetter.com
+github:              sethetter/episodic
+
+ghc-options: -Wall
+
+dependencies:
+  - base ^>=4.12.0.0
+  - text
+  - scotty
+  - sqlite-simple
+  - raw-strings-qq
+
+source-dirs:
+  - src
+
+executables:
+  episodic:
+    main: Main.hs
+
+# tests:
+#   spec:
+#     main: test/Main.hs
+#     source-dirs:
+#       - test
+#     dependencies:
+#       - hspec
