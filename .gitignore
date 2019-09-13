@@ -2,3 +2,4 @@ result
 dist-newstyle
 *.cabal
 NOTES.md
+*.db
