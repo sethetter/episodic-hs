@@ -15,9 +15,10 @@ main = do
 app :: ScottyM ()
 app = do
   get "/" $ html "<h1>Sup?!</h1>"
+
   get "/data" $ do
     e <- liftIO Data.getEpisode
     html $ mconcat ["<h1>", T.pack $ show e, "</h1>"]
-  get "/:word" $ do
-    w <- param "word"
-    html $ mconcat ["<h1>", w, "</h1>"]
+
+  get "/watch/refresh" $ do
+    Data.refreshWatchList
