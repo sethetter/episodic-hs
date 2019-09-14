@@ -1,15 +1,15 @@
 {-# LANGUAGE QuasiQuotes,OverloadedStrings #-}
-module Episodic.Data where ( loadSchema
-                           , loadSeedData
-                           , refreshWatchList
-                           )
+module Episodic.Data where
+  -- ( loadSchema
+  -- , loadSeedData
+  -- , refreshWatchList
+  -- )
 
-import Data.Text as T
-import Database.SQLite.Simple
--- import Database.SQLite.Simple.FromRow
-import Text.RawString.QQ
+import           Data.Text
+import           Text.RawString.QQ
+import qualified Database.SQLite.Simple as SQLite
 
-schema :: Query
+schema :: SQLite.Query
 schema = [r|
   CREATE TABLE IF NOT EXISTS watch_list
     ( id       INTEGER PRIMARY KEY
@@ -30,35 +30,36 @@ schema = [r|
 
 loadSchema :: IO ()
 loadSchema = do
-  conn <- open "test.db"
-  execute_ conn schema
+  conn <- SQLite.open "test.db"
+  SQLite.execute_ conn schema
 
 loadSeedData :: IO ()
 loadSeedData = do
-  conn <- open "test.db"
-  execute_ conn "INSERT INTO watch_list (id, episode) VALUES (1, 'Rick and Morty S01E01')"
+  conn <- SQLite.open "test.db"
+  SQLite.execute_ conn "INSERT INTO watch_list (id, episode) VALUES (1, 'Rick and Morty S01E01')"
 
 -- Episode
 -------------------------------------------------
 
-data Episode = Episode
+data WatchListItem = WatchListItem
   { epID :: Int
   , epName :: Text
-  } deriving (Show)
+  }
+  deriving (Show)
 
-instance FromRow Episode where
-  fromRow = Episode <$> field <*> field
+instance SQLite.FromRow WatchListItem where
+  fromRow = WatchListItem <$> SQLite.field <*> SQLite.field
 
-instance ToRow Episode where
-  toRow (Episode id' name) = toRow (id', name)
+instance SQLite.ToRow WatchListItem where
+  toRow (WatchListItem id' name) = SQLite.toRow (id', name)
 
-getEpisode :: IO Episode
-getEpisode = do
-  conn <- open "test.db"
-  [ep] <- query_ conn "SELECT * FROM watch_list"
-  return ep
+getWatchList :: IO [WatchListItem]
+getWatchList = do
+  conn <- SQLite.open "test.db"
+  watchList <- SQLite.query_ conn "SELECT * FROM watch_list"
+  return watchList
 
-refreshWatchList :: IO ()
-refreshWatchList = do
+-- refreshWatchList :: IO ()
+-- refreshWatchList = do
 
   -- get all shows from the DB

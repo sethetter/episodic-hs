@@ -7,3 +7,6 @@ watch:
 
 lint:
 	nix-shell --run "hlint"
+
+repl:
+	nix-shell --run "hpack && cabal v2-repl"

@@ -14,6 +14,10 @@ dependencies:
   - scotty
   - sqlite-simple
   - raw-strings-qq
+  - wreq
+  - aeson
+  - lens
+  - time
 
 source-dirs:
   - src

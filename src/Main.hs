@@ -17,8 +17,8 @@ app = do
   get "/" $ html "<h1>Sup?!</h1>"
 
   get "/data" $ do
-    e <- liftIO Data.getEpisode
+    e <- liftIO Data.getWatchList
     html $ mconcat ["<h1>", T.pack $ show e, "</h1>"]
 
-  get "/watch/refresh" $ do
-    Data.refreshWatchList
+  -- get "/watch/refresh" $ do
+    -- Data.refreshWatchList
