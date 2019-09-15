@@ -35,20 +35,6 @@ openDB env = SQLite.open $ env ++ ".db"
 loadSchema :: SQLite.Connection -> IO ()
 loadSchema conn = SQLite.execute_ conn schema
 
-loadSeedData :: SQLite.Connection -> IO ()
-loadSeedData conn = do
-  SQLite.execute_ conn [r|
-    DELETE FROM shows;
-    DELETE FROM watch_list;
-
-    INSERT INTO shows (id, name) VALUES (66573, 'The Good Place');
-
-    INSERT INTO watch_list (name, air_date, show_id)
-      VALUES ('The Good Place (S04E08)' , '2019-09-26' , 66573);
-    INSERT INTO watch_list (name)
-      VALUES ('Free Solo');
-  |]
-
 -- WatchListItem
 -------------------------------------------------
 

@@ -15,7 +15,6 @@ main :: IO ()
 main = do
   db <- Data.openDB "test"
   Data.loadSchema db
-  Data.loadSeedData db
   Scotty.scotty 3000 $ app db
 
 app :: SQLite.Connection -> Scotty.ScottyM ()
@@ -25,17 +24,23 @@ app db = do
     let wlHTML = List.foldl (\o e -> o ++ "<li>" ++ show e ++ "</li>") "" watchlist
     Scotty.html $ mconcat ["<ul>", T.pack wlHTML, "</ul>"]
 
+  -- WatchList
+  -------------------------------------
+
   Scotty.get "/watchlist" $ do
     watchlist <- liftIO $ Data.getWatchList db
     Scotty.json watchlist
 
-  Scotty.post "/watchlist/add" $ do
+  Scotty.post "/watchlist" $ do
     body <- Scotty.body
     case (JSON.decode body) :: Maybe Data.NewWatchListItem of
       Nothing -> Scotty.json $ ErrorResponse 400 "failed to parse input"
       Just newWLI -> do
         liftIO $ Data.insertWatchListItem db newWLI
         Scotty.json $ JSON.object ["message" .= ("Created!" :: Text)]
+
+  -- Shows
+  -------------------------------------
 
   Scotty.get "/shows" $ do
     shows' <- liftIO $ Data.getShows db
@@ -49,11 +54,10 @@ app db = do
         liftIO $ Data.insertShow db s
         Scotty.json $ JSON.object ["message" .= ("Created!" :: Text)]
 
-  -- get "/watch/refresh" $ do
-    -- Data.refreshWatchList
-    -- return data on what was added
 
--- TODO: json error response function?
+-- Responses
+--------------------------------------
+
 data ErrorResponse = ErrorResponse
   { status :: Int
   , message :: Text
