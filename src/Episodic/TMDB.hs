@@ -13,9 +13,9 @@ import qualified Network.Wreq as Wreq
 import           Control.Lens
 
 
-getShowData :: Int -> IO (Maybe TVShow)
-getShowData id' = do
-  r <- Wreq.get $ "https://api.themoviedb.org/3/tv/" ++ show id' ++ "?api_key=761ec95862941f9004a8ac543b284961"
+getShowData :: Int -> String -> IO (Maybe TVShow)
+getShowData id' apiKey = do
+  r <- Wreq.get $ "https://api.themoviedb.org/3/tv/" ++ show id' ++ "?api_key=" ++ apiKey
   return $ JSON.decode (r ^. Wreq.responseBody)
 
 
