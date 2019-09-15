@@ -29,14 +29,14 @@ schema = [r|
     );
 |]
 
-loadSchema :: IO ()
-loadSchema = do
-  conn <- SQLite.open "test.db"
-  SQLite.execute_ conn schema
+openDB :: String -> IO SQLite.Connection
+openDB env = SQLite.open $ env ++ ".db"
 
-loadSeedData :: IO ()
-loadSeedData = do
-  conn <- SQLite.open "test.db"
+loadSchema :: SQLite.Connection -> IO ()
+loadSchema conn = SQLite.execute_ conn schema
+
+loadSeedData :: SQLite.Connection -> IO ()
+loadSeedData conn = do
   SQLite.execute_ conn [r|
     DELETE FROM shows;
     DELETE FROM watch_list;
@@ -80,9 +80,8 @@ instance JSON.ToJSON WatchListItem where
                            , "show_id"  .= wliShowID wli
                            ]
 
-getWatchList :: IO [WatchListItem]
-getWatchList = do
-  conn <- SQLite.open "test.db"
+getWatchList :: SQLite.Connection -> IO [WatchListItem]
+getWatchList conn = do
   watchList <- SQLite.query_ conn "SELECT * FROM watch_list"
   return watchList
 
@@ -101,21 +100,44 @@ instance JSON.FromJSON NewWatchListItem where
                      <*> v .:? "air_date"
                      <*> v .:? "show_id"
 
-insertWatchListItem :: NewWatchListItem -> IO ()
-insertWatchListItem (NewWatchListItem name (Just airDate) (Just showID)) = do
-  conn <- SQLite.open "test.db"
+insertWatchListItem :: SQLite.Connection -> NewWatchListItem -> IO ()
+insertWatchListItem conn (NewWatchListItem name (Just airDate) (Just showID)) = do
   SQLite.executeNamed conn
     "INSERT INTO watch_list (name, air_date, show_id) VALUES (:name, :airDate, :showID)"
     [":name" := name, ":airDate" := airDate, ":showID" := showID]
-insertWatchListItem (NewWatchListItem name Nothing Nothing) = do
-  conn <- SQLite.open "test.db"
+insertWatchListItem conn (NewWatchListItem name Nothing Nothing) = do
   SQLite.executeNamed conn
     "INSERT INTO watch_list (name) VALUES (:name)"
     [":name" := name]
 -- TODO: Shouldn't be a silent failure
-insertWatchListItem _ = return ()
+insertWatchListItem _ _ = return ()
 
 -- refreshWatchList :: IO ()
 -- refreshWatchList = do
-
   -- get all shows from the DB
+
+-- Show'
+-------------------------------------------------
+
+data Show' = Show'
+  { show'ID :: Int
+  , show'Name :: Text
+  }
+
+instance JSON.FromJSON Show' where
+  parseJSON = JSON.withObject "Show'" $ \v ->
+    Show' <$> v .: "id"
+          <*> v .: "name"
+
+instance JSON.ToJSON Show' where
+  toJSON s = JSON.object ["id" .= show'ID s, "name" .= show'Name s]
+
+instance SQLite.ToRow Show' where
+  toRow s = SQLite.toRow (show'ID s, show'Name s)
+
+instance SQLite.FromRow Show' where
+  fromRow = Show' <$> SQLite.field <*> SQLite.field
+
+getShows :: SQLite.Connection -> IO [Show']
+getShows db = SQLite.query_ db "SELECT * FROM shows"
+
