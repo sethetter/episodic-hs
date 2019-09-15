@@ -41,6 +41,14 @@ app db = do
     shows' <- liftIO $ Data.getShows db
     Scotty.json shows'
 
+  Scotty.post "/shows" $ do
+    body <- Scotty.body
+    case (JSON.decode body) :: Maybe Data.Show' of
+      Nothing -> Scotty.json $ ErrorResponse 400 "failed to parse input"
+      Just s -> do
+        liftIO $ Data.insertShow db s
+        Scotty.json $ JSON.object ["message" .= ("Created!" :: Text)]
+
   -- get "/watch/refresh" $ do
     -- Data.refreshWatchList
     -- return data on what was added

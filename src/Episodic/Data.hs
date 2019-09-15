@@ -141,3 +141,8 @@ instance SQLite.FromRow Show' where
 getShows :: SQLite.Connection -> IO [Show']
 getShows db = SQLite.query_ db "SELECT * FROM shows"
 
+insertShow :: SQLite.Connection -> Show' -> IO ()
+insertShow db s =
+  SQLite.executeNamed db
+    "INSERT INTO shows (id, name) VALUES (:id, :name)"
+    [":id" := show'ID s, ":name" := show'Name s]
