@@ -10,7 +10,7 @@ import           Data.Text
 import           Text.RawString.QQ
 import           Database.SQLite.Simple (NamedParam((:=)))
 import qualified Database.SQLite.Simple as SQLite
-import           Data.Aeson ((.:), (.=))
+import           Data.Aeson ((.:), (.:?), (.=))
 import qualified Data.Aeson as JSON
 
 schema :: SQLite.Query
@@ -98,8 +98,8 @@ data NewWatchListItem = NewWatchListItem
 instance JSON.FromJSON NewWatchListItem where
   parseJSON = JSON.withObject "NewWatchListItem" $ \v ->
     NewWatchListItem <$> v .: "name"
-                     <*> v .: "air_date"
-                     <*> v .: "show_id"
+                     <*> v .:? "air_date"
+                     <*> v .:? "show_id"
 
 insertWatchListItem :: NewWatchListItem -> IO ()
 insertWatchListItem (NewWatchListItem name (Just airDate) (Just showID)) = do
