@@ -9,5 +9,6 @@ in
       haskellPackages.hpack
       haskellPackages.hlint
       haskellPackages.ghcid
+      sqlite
     ];
   }
