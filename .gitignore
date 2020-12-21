@@ -3,3 +3,5 @@ dist-newstyle
 *.cabal
 NOTES.md
 *.db
+.stack-work
+dist

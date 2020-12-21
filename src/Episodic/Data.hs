@@ -7,11 +7,13 @@ module Episodic.Data where
 
 import           Data.Time
 import           Data.Text
+import           Data.Maybe (fromMaybe, catMaybes)
 import           Text.RawString.QQ
 import           Database.SQLite.Simple (NamedParam((:=)))
 import qualified Database.SQLite.Simple as SQLite
 import           Data.Aeson ((.:), (.:?), (.=))
 import qualified Data.Aeson as JSON
+import qualified Episodic.TMDB as TMDB
 
 schema :: SQLite.Query
 schema = [r|
@@ -47,16 +49,16 @@ data WatchListItem = WatchListItem
   deriving (Show)
 
 instance SQLite.FromRow WatchListItem where
-  fromRow = WatchListItem <$> SQLite.field
-                          <*> SQLite.field
-                          <*> SQLite.field
-                          <*> SQLite.field
+  fromRow = WatchListItem <$> SQLite.field -- id
+                          <*> SQLite.field -- name
+                          <*> SQLite.field -- air_date
+                          <*> SQLite.field -- show_id
 
 instance SQLite.ToRow WatchListItem where
-  toRow wli = SQLite.toRow ( wliID wli
-                           , wliName wli
-                           , wliAirDate wli
-                           , wliShowID wli
+  toRow wli = SQLite.toRow ( wliID wli      -- id
+                           , wliName wli    -- name
+                           , wliAirDate wli -- air_date
+                           , wliShowID wli  -- show_id
                            )
 
 instance JSON.ToJSON WatchListItem where
@@ -87,20 +89,33 @@ instance JSON.FromJSON NewWatchListItem where
                      <*> v .:? "show_id"
 
 insertWatchListItem :: SQLite.Connection -> NewWatchListItem -> IO ()
-insertWatchListItem conn (NewWatchListItem name (Just airDate) (Just showID)) = do
+insertWatchListItem conn (NewWatchListItem name (Just airDate) (Just showID)) =
   SQLite.executeNamed conn
     "INSERT INTO watch_list (name, air_date, show_id) VALUES (:name, :airDate, :showID)"
     [":name" := name, ":airDate" := airDate, ":showID" := showID]
-insertWatchListItem conn (NewWatchListItem name Nothing Nothing) = do
+insertWatchListItem conn (NewWatchListItem name Nothing Nothing) =
   SQLite.executeNamed conn
     "INSERT INTO watch_list (name) VALUES (:name)"
     [":name" := name]
 -- TODO: Shouldn't be a silent failure
 insertWatchListItem _ _ = return ()
 
--- refreshWatchList :: IO ()
--- refreshWatchList = do
-  -- get all shows from the DB
+
+refreshWatchList :: SQLite.Connection -> IO ()
+refreshWatchList conn = do
+  shows <- getShows conn
+  watchList <- getWatchList conn
+  episodes <- fmap (\s -> TMDB.getNextEpisode (show'ID s) "") shows
+  fmap (saveNextEpisode conn) $ filter epInWatchlist (catMaybes episodes)
+
+epInWatchlist :: [WatchListItem] -> TMDB.Episode -> Bool
+epInWatchlist wl (TMDB.Episode _ _ _)
+
+saveNextEpisode :: SQLite.Connection -> TMDB.TVShow -> TMDB.Episode -> IO ()
+saveNextEpisode conn (TMDB.TVShow showID name _) (TMDB.Episode num season airDate) =
+  -- TODO: if episode is present already, skip it
+  insertWatchListItem conn $ NewWatchListItem (name ++ "(S" ++ season ++ "E" ++ num ++ ")") airDate showID
+
 
 -- Show'
 -------------------------------------------------

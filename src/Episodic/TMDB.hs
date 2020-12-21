@@ -1,8 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Episodic.TMDB
   ( getShowData
-  , Episode
-  , TVShow
+  , getNextEpisode
+  , Episode(..)
+  , TVShow(..)
   ) where
 
 import           Data.Time
@@ -18,6 +19,10 @@ getShowData id' apiKey = do
   r <- Wreq.get $ "https://api.themoviedb.org/3/tv/" ++ show id' ++ "?api_key=" ++ apiKey
   return $ JSON.decode (r ^. Wreq.responseBody)
 
+getNextEpisode :: Int -> String -> IO (Maybe Episode)
+getNextEpisode id' apiKey = do
+  s <- getShowData id' apiKey
+  pure $ _showNextEpisode <$> s
 
 -- TVShow
 ------------------------------------------
@@ -40,6 +45,7 @@ data Episode = Episode
   { _episodeNumber         :: Integer
   , _episodeSeasonNumber   :: Integer
   , _episodeAirDate        :: Day
+  , _episodeShowName       :: Text
   }
   deriving (Show)
 
@@ -48,5 +54,6 @@ instance JSON.FromJSON Episode where
     Episode <$> v .: "episode_number"
             <*> v .: "season_number"
             <*> v .: "air_date"
+            <*> pure ""
 
 
